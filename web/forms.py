@@ -3,7 +3,7 @@ import datetime
 from django import forms
 from django.contrib.auth import get_user_model
 
-from web.models import Note
+from web.models import Note, Tag
 
 User = get_user_model()
 
@@ -34,4 +34,14 @@ class NoteForm(forms.ModelForm):
 
     class Meta:
         model = Note
-        fields = ('title', 'text', 'image')
+        fields = ('title', 'text', 'image', 'tags')
+
+
+class TagForm(forms.ModelForm):
+    def save(self, commit=True):
+        self.instance.user = self.initial['user']
+        return super().save(commit)
+
+    class Meta:
+        model = Tag
+        fields = ('name',)
