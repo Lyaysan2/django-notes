@@ -59,7 +59,7 @@ def note_edit_view(request, id=None):
     note = Note.objects.get(id=id) if id is not None else None
     form = NoteForm(instance=note)
     if request.method == 'POST':
-        form = NoteForm(data=request.POST, instance=note, initial={'user': request.user})
+        form = NoteForm(data=request.POST, files=request.FILES, instance=note, initial={'user': request.user})
         if form.is_valid():
             form.save()
             return redirect('main')
