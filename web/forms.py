@@ -30,8 +30,6 @@ class AuthForm(forms.Form):
 class NoteForm(forms.ModelForm):
     def save(self, commit=True):
         self.instance.user = self.initial['user']
-        self.instance.created_at = self.initial['created_at']
-        self.instance.updated_at = self.initial['updated_at']
         return super().save(commit)
 
     class Meta:

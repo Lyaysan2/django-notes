@@ -1,18 +1,13 @@
 {% extends 'web/base.html' %}
 {% block content %}
-    Hello!
-    {% if not user.is_anonymous %}
-        <p>Вы авторизованы как <b>{{ user.username }}</b></p>
-        <a href="{% url 'note_add' %}">Создать заметку</a>
-        <ul>
-            {% for note in notes %}
-                <li>
-                    <b>{{ note.title }}</b>
-                    {{ note.text }}
-                    {{ note.created_at }}
-                </li>
-            {% endfor %}
-        </ul>
-
-    {% endif %}
+    <ul>
+        {% for note in notes %}
+            <li>
+                <b>{{ note.title }}</b>
+                {{ note.text }}
+                {{ note.created_at }}
+                <a href="{% url 'note_edit' note.id %}">изменить</a>
+            </li>
+        {% endfor %}
+    </ul>
 {% endblock %}
