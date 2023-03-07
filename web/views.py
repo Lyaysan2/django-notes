@@ -1,13 +1,20 @@
+import datetime
+
 from django.shortcuts import render, redirect
 
-from web.forms import RegistrationForm, AuthForm
+from web.forms import RegistrationForm, AuthForm, NoteForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
+
+from web.models import Note
 
 User = get_user_model()
 
 
 def main_view(request):
-    return render(request, 'web/main.html')
+    notes = Note.objects.all()
+    return render(request, 'web/main.html', {
+        'notes': notes
+    })
 
 
 def registration_view(request):
@@ -46,3 +53,14 @@ def auth_view(request):
 def logout_view(request):
     logout(request)
     return redirect('main')
+
+
+def note_edit_view(request, id=None):
+    note = Note.objects.get(id=id) if id is not None else None
+    form = NoteForm(instance=note)
+    if request.method == 'POST':
+        form = NoteForm(data=request.POST, instance=note, initial={'user': request.user})
+        if form.is_valid():
+            form.save()
+            return redirect('main')
+    return render(request, 'web/note_form.html', {'form': form})

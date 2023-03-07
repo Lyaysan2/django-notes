@@ -5,17 +5,25 @@
     <title>Notes</title>
 </head>
 <body>
-    <h1><a href="{% url 'main' %}">Note</a></h1>
-    <nav>
-        <a href="{% url 'main' %}">Главная</a>
-        {% if user.is_anonymous %}
+<h1><a href="{% url 'main' %}">Note</a></h1>
+<nav>
+    <a href="{% url 'main' %}">Главная</a>
+    {% if user.is_anonymous %}
+        <div style="text-align: right">
             <a href="{% url 'registration' %}">Регистрация</a>
             <a href="{% url 'auth' %}">Авторизация</a>
-        {% else %}
-            <a href="{% url 'logout' %}">Выход</a>
-        {% endif %}
-    </nav>
-    <hr>
-    {% block content %}{% endblock %}
+        </div>
+    {% else %}
+        <a href="{% url 'note_add' %}">Создать заметку</a>
+        <div style="text-align: right">
+            {% if not user.is_anonymous %}
+                Вы авторизованы как <b>{{ user.username }}</b>
+                <a href="{% url 'logout' %}">Выход</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</nav>
+<hr>
+{% block content %}{% endblock %}
 </body>
 </html>

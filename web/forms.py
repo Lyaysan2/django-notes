@@ -1,5 +1,9 @@
+import datetime
+
 from django import forms
 from django.contrib.auth import get_user_model
+
+from web.models import Note
 
 User = get_user_model()
 
@@ -21,3 +25,13 @@ class RegistrationForm(forms.ModelForm):
 class AuthForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField(widget=forms.PasswordInput())
+
+
+class NoteForm(forms.ModelForm):
+    def save(self, commit=True):
+        self.instance.user = self.initial['user']
+        return super().save(commit)
+
+    class Meta:
+        model = Note
+        fields = ('title', 'text')
