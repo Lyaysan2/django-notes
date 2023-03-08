@@ -1,12 +1,23 @@
 {% extends 'web/base.html' %}
 {% block content %}
+    <b>Добавить заметку</b>
+    <form action="{% url 'note_add' %}" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button>Сохранить</button>
+    </form>
+
     <ul>
         {% for note in notes %}
             <li>
-                <b>{{ note.title }}</b>
+                <b>"{{ note.title }}"</b> -
                 {{ note.text }}
-                {{ note.created_at }}
-                <a href="{% url 'note_edit' note.id %}">изменить</a>
+                <br>
+                <small>
+                    {{ note.updated_at }}
+                    <a href="{% url 'note_edit' note.id %}">изменить</a>
+                    <a href="{% url 'note_delete' note.id %}">удалить</a>
+                </small>
             </li>
         {% endfor %}
     </ul>

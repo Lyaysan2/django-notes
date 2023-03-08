@@ -1,19 +1,22 @@
 import datetime
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 
 from web.models import Note, Tag
 
 User = get_user_model()
 
 
+@login_required
 def main_view(request):
-    notes = Note.objects.all()
+    notes = Note.objects.all().filter(user=request.user).order_by('-updated_at')
     return render(request, 'web/main.html', {
-        'notes': notes
+        'notes': notes,
+        'form': NoteForm()
     })
 
 
@@ -55,8 +58,9 @@ def logout_view(request):
     return redirect('main')
 
 
+@login_required
 def note_edit_view(request, id=None):
-    note = Note.objects.get(id=id) if id is not None else None
+    note = get_object_or_404(Note, user=request.user, id=id) if id is not None else None
     form = NoteForm(instance=note)
     if request.method == 'POST':
         form = NoteForm(data=request.POST, files=request.FILES, instance=note, initial={'user': request.user})
@@ -64,6 +68,13 @@ def note_edit_view(request, id=None):
             form.save()
             return redirect('main')
     return render(request, 'web/note_form.html', {'form': form})
+
+
+@login_required
+def note_delete_view(request, id):
+    note = get_object_or_404(Note, user=request.user, id=id)
+    note.delete()
+    return redirect('main')
 
 
 def _list_editor_view(request, model_cls, form_cls, template_name, url_name):
@@ -77,11 +88,13 @@ def _list_editor_view(request, model_cls, form_cls, template_name, url_name):
     return render(request, f"web/{template_name}.html", {"items": items, "form": form})
 
 
+@login_required
 def tags_view(request):
     return _list_editor_view(request, Tag, TagForm, "tags", "tags")
 
 
+@login_required
 def tags_delete_view(request, id):
-    tag = Tag.objects.get(id=id)
+    tag = get_object_or_404(Tag, user=request.user, id=id)
     tag.delete()
     return redirect('tags')
