@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.utils.timezone import now
 
 from web.models import Note, Tag
 
@@ -61,6 +62,10 @@ def logout_view(request):
 @login_required
 def note_edit_view(request, id=None):
     note = get_object_or_404(Note, user=request.user, id=id) if id is not None else None
+    if note is not None:
+        note.updated_at = now()
+    else:
+        note = Note(created_at=now(), updated_at=now())
     form = NoteForm(instance=note)
     if request.method == 'POST':
         form = NoteForm(data=request.POST, files=request.FILES, instance=note, initial={'user': request.user})
