@@ -9,8 +9,10 @@ from django.utils.timezone import now
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Max, Min, Q, Sum
 from django.db.models.functions import TruncDate
+from django.http import HttpResponse
 
 from web.models import Note, Tag
+from web.services import filter_notes, export_notes_csv
 
 User = get_user_model()
 
@@ -21,16 +23,8 @@ def main_view(request):
 
     filter_form = NoteFilterForm(request.GET)
     filter_form.is_valid()
-    filters = filter_form.cleaned_data
 
-    if filters['search']:
-        notes = notes.filter(text__icontains=filters['search'])
-
-    if filters['start_date']:
-        notes = notes.filter(updated_at__gte=filters['start_date'])
-
-    if filters['end_date']:
-        notes = notes.filter(updated_at__lte=filters['end_date'])
+    notes = filter_notes(notes, filter_form.cleaned_data)
 
     total_count = notes.count()
     notes = notes.prefetch_related("tags").select_related("user").annotate(
@@ -40,6 +34,13 @@ def main_view(request):
 
     page_number = request.GET.get("page", 1)
     paginator = Paginator(notes, per_page=10)
+
+    if request.GET.get("export") == 'csv':
+        response = HttpResponse(
+            content_type='text/csv',
+            headers={"Content-Disposition": "attachment; filename=notes.csv"}
+        )
+        return export_notes_csv(notes, response)
 
     return render(request, 'web/main.html', {
         "notes": paginator.get_page(page_number),
