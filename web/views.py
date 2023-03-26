@@ -2,10 +2,11 @@ import datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
 
-from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm
+from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
+from django.core.paginator import Paginator
 
 from web.models import Note, Tag
 
@@ -15,9 +16,25 @@ User = get_user_model()
 @login_required
 def main_view(request):
     notes = Note.objects.all().filter(user=request.user).order_by('-updated_at')
+
+    filter_form = NoteFilterForm(request.GET)
+    filter_form.is_valid()
+    filters = filter_form.cleaned_data
+
+
+    if filters['search']:
+        notes = notes.filter(text__icontains=filters['search'])
+
+    total_count = notes.count()
+
+    page_number = request.GET.get("page", 1)
+    paginator = Paginator(notes, per_page=10)
+
     return render(request, 'web/main.html', {
-        'notes': notes,
-        'form': NoteForm()
+        "notes": paginator.get_page(page_number),
+        "form": NoteForm(),
+        "filter_form": filter_form,
+        "total_count": total_count
     })
 
 
