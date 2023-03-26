@@ -21,11 +21,17 @@ def main_view(request):
     filter_form.is_valid()
     filters = filter_form.cleaned_data
 
-
     if filters['search']:
         notes = notes.filter(text__icontains=filters['search'])
 
+    if filters['start_date']:
+        notes = notes.filter(updated_at__gte=filters['start_date'])
+
+    if filters['end_date']:
+        notes = notes.filter(updated_at__lte=filters['end_date'])
+
     total_count = notes.count()
+    notes = notes.prefetch_related("tags").select_related("user")
 
     page_number = request.GET.get("page", 1)
     paginator = Paginator(notes, per_page=10)

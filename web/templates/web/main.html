@@ -17,13 +17,22 @@
         {% endfor %}
 
         <button>Найти</button>
+
+        <a href="?">Показать всё</a>
     </form>
 
 
     <ul>
         {% for note in notes %}
             <li>
-                <b>"{{ note.title }}"</b> -
+                <b>"{{ note.title }}"</b>
+                <small>
+                    {% if note.tags.all %}
+                        [{{ note.tags_count }}: {% for tag in note.tags.all %} {{ tag.name }} {% endfor %}]
+                    {% endif %}
+                    {{ note.user.username }}
+                </small>
+                <br>
                 {{ note.text }}
                 <br>
                 <small>
