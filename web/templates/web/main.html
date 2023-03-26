@@ -25,7 +25,7 @@
     <ul>
         {% for note in notes %}
             <li>
-                <b>"{{ note.title }}"</b>
+                <b>"{{ note.title }}"</b> <small> - time from update: {{ note.spent_time }}</small>
                 <small>
                     {% if note.tags.all %}
                         [{{ note.tags_count }}: {% for tag in note.tags.all %} {{ tag.name }} {% endfor %}]
@@ -36,7 +36,7 @@
                 {{ note.text }}
                 <br>
                 <small>
-                    {{ note.updated_at }}
+                    {{ note.updated_at|date:"SHORT_DATETIME_FORMAT" }}
                     <a href="{% url 'note_edit' note.id %}">изменить</a>
                     <a href="{% url 'note_delete' note.id %}">удалить</a>
                 </small>

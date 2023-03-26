@@ -7,6 +7,8 @@ from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
 from django.core.paginator import Paginator
+from django.db.models import Count, F, Max, Min, Q, Sum
+from django.db.models.functions import TruncDate
 
 from web.models import Note, Tag
 
@@ -31,7 +33,10 @@ def main_view(request):
         notes = notes.filter(updated_at__lte=filters['end_date'])
 
     total_count = notes.count()
-    notes = notes.prefetch_related("tags").select_related("user")
+    notes = notes.prefetch_related("tags").select_related("user").annotate(
+        tags_count=Count("tags"),
+        spent_time=now() - F("updated_at")
+    )
 
     page_number = request.GET.get("page", 1)
     paginator = Paginator(notes, per_page=10)
@@ -41,6 +46,28 @@ def main_view(request):
         "form": NoteForm(),
         "filter_form": filter_form,
         "total_count": total_count
+    })
+
+
+def analytics_view(request):
+    overall_stat = Note.objects.aggregate(
+        count=Count("id"),
+        max_date=Max("created_at"),
+        min_date=Min("created_at")
+    )
+    days_stat = (
+        Note.objects
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(
+            count=Count("id")
+        )
+            .order_by('-date')
+    )
+
+    return render(request, "web/analytics.html", {
+        "overall_stat": overall_stat,
+        'days_stat': days_stat
     })
 
 
