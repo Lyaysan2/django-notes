@@ -7,18 +7,56 @@
         <button>Сохранить</button>
     </form>
 
+    <hr>
+    <form action="">
+        <b>Фильтры:</b><br>
+
+        {% for field in filter_form %}
+            {{ field.label }}
+            {{ field }}
+        {% endfor %}
+
+        <button>Найти</button>
+
+        <a href="?">Показать всё</a>
+    </form>
+
+
     <ul>
         {% for note in notes %}
             <li>
-                <b>"{{ note.title }}"</b> -
+                <b>"{{ note.title }}"</b> <small> - time from update: {{ note.spent_time }}</small>
+                <small>
+                    {% if note.tags.all %}
+                        [{{ note.tags_count }}: {% for tag in note.tags.all %} {{ tag.name }} {% endfor %}]
+                    {% endif %}
+                    {{ note.user.username }}
+                </small>
+                <br>
                 {{ note.text }}
                 <br>
                 <small>
-                    {{ note.updated_at }}
+                    {{ note.updated_at|date:"SHORT_DATETIME_FORMAT" }}
                     <a href="{% url 'note_edit' note.id %}">изменить</a>
                     <a href="{% url 'note_delete' note.id %}">удалить</a>
                 </small>
             </li>
         {% endfor %}
     </ul>
+
+    всего {{ total_count }} записей. {{ notes|length }} на этой странице.
+
+    <nav>
+        {% if notes.has_previous %}
+            <a href="?page=1">в начало</a>
+            <a href="?page={{ notes.previous_page_number }}">предыдующая страница</a>
+        {% endif %}
+
+        страница {{ notes.number }} из {{ notes.paginator.num_pages }}
+
+        {% if notes.has_next %}
+            <a href="?page={{ notes.next_page_number }}">следующая страница</a>
+            <a href="?page={{ notes.paginator.num_pages }}">в конец</a>
+        {% endif %}
+    </nav>
 {% endblock %}

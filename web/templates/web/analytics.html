@@ -1,0 +1,19 @@
+{% extends 'web/base.html' %}
+{% block content %}
+    <h2>Аналитика</h2>
+     <p>
+        Всего <b>{{ overall_stat.count }}</b> слотов.
+        Самая поздняя запись {{ overall_stat.max_date }}.
+        Самая ранняя запись {{ overall_stat.min_date }}.
+    </p>
+
+    <b>Статистика по дням</b>
+    <ul>
+        {% for day_stat in days_stat %}
+            <li>
+                <b>{{ day_stat.date }}</b> –
+                {{ day_stat.count }} записей
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

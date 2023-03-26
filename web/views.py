@@ -2,9 +2,13 @@ import datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
 
-from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm
+from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.utils.timezone import now
+from django.core.paginator import Paginator
+from django.db.models import Count, F, Max, Min, Q, Sum
+from django.db.models.functions import TruncDate
 
 from web.models import Note, Tag
 
@@ -14,9 +18,56 @@ User = get_user_model()
 @login_required
 def main_view(request):
     notes = Note.objects.all().filter(user=request.user).order_by('-updated_at')
+
+    filter_form = NoteFilterForm(request.GET)
+    filter_form.is_valid()
+    filters = filter_form.cleaned_data
+
+    if filters['search']:
+        notes = notes.filter(text__icontains=filters['search'])
+
+    if filters['start_date']:
+        notes = notes.filter(updated_at__gte=filters['start_date'])
+
+    if filters['end_date']:
+        notes = notes.filter(updated_at__lte=filters['end_date'])
+
+    total_count = notes.count()
+    notes = notes.prefetch_related("tags").select_related("user").annotate(
+        tags_count=Count("tags"),
+        spent_time=now() - F("updated_at")
+    )
+
+    page_number = request.GET.get("page", 1)
+    paginator = Paginator(notes, per_page=10)
+
     return render(request, 'web/main.html', {
-        'notes': notes,
-        'form': NoteForm()
+        "notes": paginator.get_page(page_number),
+        "form": NoteForm(),
+        "filter_form": filter_form,
+        "total_count": total_count
+    })
+
+
+def analytics_view(request):
+    overall_stat = Note.objects.aggregate(
+        count=Count("id"),
+        max_date=Max("created_at"),
+        min_date=Min("created_at")
+    )
+    days_stat = (
+        Note.objects
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(
+            count=Count("id")
+        )
+            .order_by('-date')
+    )
+
+    return render(request, "web/analytics.html", {
+        "overall_stat": overall_stat,
+        'days_stat': days_stat
     })
 
 
@@ -61,6 +112,10 @@ def logout_view(request):
 @login_required
 def note_edit_view(request, id=None):
     note = get_object_or_404(Note, user=request.user, id=id) if id is not None else None
+    if note is not None:
+        note.updated_at = now()
+    else:
+        note = Note(created_at=now(), updated_at=now())
     form = NoteForm(instance=note)
     if request.method == 'POST':
         form = NoteForm(data=request.POST, files=request.FILES, instance=note, initial={'user': request.user})

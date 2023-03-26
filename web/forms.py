@@ -45,3 +45,21 @@ class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ('name',)
+
+
+class NoteFilterForm(forms.Form):
+    search = forms.CharField(label='', widget=forms.TextInput(attrs={"placeholder": "Поиск"}), required=False)
+    start_date = forms.DateTimeField(
+        label="От",
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local"}, format='%Y-%m-%dT%H:%M'
+        ),
+        required=False
+    )
+    end_date = forms.DateTimeField(
+        label="до",
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local"}, format='%Y-%m-%dT%H:%M'
+        ),
+        required=False
+    )
