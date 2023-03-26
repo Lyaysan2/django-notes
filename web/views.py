@@ -2,7 +2,7 @@ import datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
 
-from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm
+from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm, ImportForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
@@ -12,7 +12,7 @@ from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 
 from web.models import Note, Tag
-from web.services import filter_notes, export_notes_csv
+from web.services import filter_notes, export_notes_csv, import_notes_from_csv
 
 User = get_user_model()
 
@@ -47,6 +47,18 @@ def main_view(request):
         "form": NoteForm(),
         "filter_form": filter_form,
         "total_count": total_count
+    })
+
+
+@login_required
+def import_view(request):
+    if request.method == 'POST':
+        form = ImportForm(files=request.FILES)
+        if form.is_valid():
+            import_notes_from_csv(form.cleaned_data['file'], request.user.id)
+            return redirect("main")
+    return render(request, "web/import.html", {
+        "form": ImportForm()
     })
 
 

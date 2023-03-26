@@ -63,3 +63,7 @@ class NoteFilterForm(forms.Form):
         ),
         required=False
     )
+
+
+class ImportForm(forms.Form):
+    file = forms.FileField()
