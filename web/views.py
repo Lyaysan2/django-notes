@@ -2,15 +2,17 @@ import datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
 
-from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm
+from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm, ImportForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Max, Min, Q, Sum
 from django.db.models.functions import TruncDate
+from django.http import HttpResponse
 
 from web.models import Note, Tag
+from web.services import filter_notes, export_notes_csv, import_notes_from_csv
 
 User = get_user_model()
 
@@ -21,16 +23,8 @@ def main_view(request):
 
     filter_form = NoteFilterForm(request.GET)
     filter_form.is_valid()
-    filters = filter_form.cleaned_data
 
-    if filters['search']:
-        notes = notes.filter(text__icontains=filters['search'])
-
-    if filters['start_date']:
-        notes = notes.filter(updated_at__gte=filters['start_date'])
-
-    if filters['end_date']:
-        notes = notes.filter(updated_at__lte=filters['end_date'])
+    notes = filter_notes(notes, filter_form.cleaned_data)
 
     total_count = notes.count()
     notes = notes.prefetch_related("tags").select_related("user").annotate(
@@ -41,11 +35,30 @@ def main_view(request):
     page_number = request.GET.get("page", 1)
     paginator = Paginator(notes, per_page=10)
 
+    if request.GET.get("export") == 'csv':
+        response = HttpResponse(
+            content_type='text/csv',
+            headers={"Content-Disposition": "attachment; filename=notes.csv"}
+        )
+        return export_notes_csv(notes, response)
+
     return render(request, 'web/main.html', {
         "notes": paginator.get_page(page_number),
         "form": NoteForm(),
         "filter_form": filter_form,
         "total_count": total_count
+    })
+
+
+@login_required
+def import_view(request):
+    if request.method == 'POST':
+        form = ImportForm(files=request.FILES)
+        if form.is_valid():
+            import_notes_from_csv(form.cleaned_data['file'], request.user.id)
+            return redirect("main")
+    return render(request, "web/import.html", {
+        "form": ImportForm()
     })
 
 
