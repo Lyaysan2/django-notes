@@ -13,6 +13,10 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = 'тег'
+        verbose_name_plural = 'теги'
+
 
 class Note(models.Model):
     title = models.CharField(max_length=256, verbose_name='Заголовок')
@@ -22,3 +26,10 @@ class Note(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
     tags = models.ManyToManyField(Tag, verbose_name='Теги')
     image = models.ImageField(upload_to='notes/', null=True, blank=True, verbose_name='Картинка')
+
+    def __str__(self):
+        return self.text
+
+    class Meta:
+        verbose_name = 'заметка'
+        verbose_name_plural = 'заметки'
