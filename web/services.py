@@ -1,5 +1,6 @@
 import csv
 
+from notes.redis import get_redis_client
 from web.models import Note, Tag
 
 
@@ -56,3 +57,11 @@ def import_notes_from_csv(file, user_id):
                 Note.tags.through(note_id=note.id, tag_id=tag_id)
             )
     Note.tags.through.objects.bulk_create(tags)
+
+def get_stat():
+    redis = get_redis_client()
+    keys = redis.keys("stat_*")
+    return [
+        (key.decode().replace("stat_", ""), redis.get(key).decode())
+        for key in keys
+    ]

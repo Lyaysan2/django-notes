@@ -1,22 +1,21 @@
-import datetime
-
-from django.shortcuts import render, redirect, get_object_or_404
-
-from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm, ImportForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.utils.timezone import now
 from django.core.paginator import Paginator
-from django.db.models import Count, F, Max, Min, Q, Sum
+from django.db.models import Count, F, Max, Min
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.timezone import now
+from django.views.decorators.cache import cache_page
 
+from web.forms import RegistrationForm, AuthForm, NoteForm, TagForm, NoteFilterForm, ImportForm
 from web.models import Note, Tag
-from web.services import filter_notes, export_notes_csv, import_notes_from_csv
+from web.services import filter_notes, export_notes_csv, import_notes_from_csv, get_stat
 
 User = get_user_model()
 
 
+@cache_page(3600)
 @login_required
 def main_view(request):
     notes = Note.objects.all().filter(user=request.user).order_by('-updated_at')
@@ -33,7 +32,7 @@ def main_view(request):
     )
 
     page_number = request.GET.get("page", 1)
-    paginator = Paginator(notes, per_page=10)
+    paginator = Paginator(notes, per_page=1000)
 
     if request.GET.get("export") == 'csv':
         response = HttpResponse(
@@ -166,3 +165,8 @@ def tags_delete_view(request, id):
     tag = get_object_or_404(Tag, user=request.user, id=id)
     tag.delete()
     return redirect('tags')
+
+
+@login_required
+def stat_view(request):
+    return render(request, "web/stat.html", {"results": get_stat()})
