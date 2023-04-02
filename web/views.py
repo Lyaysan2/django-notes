@@ -15,7 +15,7 @@ from web.services import filter_notes, export_notes_csv, import_notes_from_csv, 
 User = get_user_model()
 
 
-@cache_page(3600)
+@cache_page(60)
 @login_required
 def main_view(request):
     notes = Note.objects.all().filter(user=request.user).order_by('-updated_at')
@@ -32,7 +32,7 @@ def main_view(request):
     )
 
     page_number = request.GET.get("page", 1)
-    paginator = Paginator(notes, per_page=1000)
+    paginator = Paginator(notes, per_page=10)
 
     if request.GET.get("export") == 'csv':
         response = HttpResponse(
