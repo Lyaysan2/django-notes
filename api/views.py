@@ -1,10 +1,10 @@
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.response import Response
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-from api.serializers import NoteSerializer
-from web.models import Note
+from api.serializers import NoteSerializer, TagSerializer
+from web.models import Note, Tag
 
 
 @api_view(["GET"])
@@ -13,8 +13,15 @@ def main_view(request):
     return Response({"status": "ok"})
 
 
-@api_view(["GET"])
-def notes_view(request):
-    notes = Note.objects.all().select_related("user").prefetch_related("tags")
-    serializers = NoteSerializer(notes, many=True)
-    return Response(serializers.data)
+class NoteModelViewSet(ModelViewSet):
+    serializer_class = NoteSerializer
+
+    def get_queryset(self):
+        return Note.objects.all().select_related("user").prefetch_related("tags").filter(user=self.request.user)
+
+
+class TagModelViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
+    serializer_class = TagSerializer
+
+    def get_queryset(self):
+        return Tag.objects.all().filter(user=self.request.user)

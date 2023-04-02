@@ -15,12 +15,16 @@ Including another URLconf
 """
 from django.urls import path
 from rest_framework.authtoken.views import obtain_auth_token
+from rest_framework.routers import SimpleRouter
 
-from api.views import notes_view
-from api.views import main_view
+from api.views import main_view, NoteModelViewSet, TagModelViewSet
+
+router = SimpleRouter()
+router.register("notes", NoteModelViewSet, basename='notes')
+router.register("tags", TagModelViewSet, basename='tags')
 
 urlpatterns = [
     path('', main_view),
     path('token/', obtain_auth_token),
-    path('notes/', notes_view)
+    *router.urls
 ]
